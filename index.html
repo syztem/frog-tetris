@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Frog Tetris v3.0 • Midnight Pond Edition</title>
+<title>Frog Tetris • Midnight Pond</title>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Press+Start+2P&display=swap');
 
     :root {
         --neon-green: #64dd17;
@@ -17,6 +17,9 @@
         --water-teal: #00e5cc;
         --lily-purple: #ab47bc;
         --firefly: #ffff99;
+        --glow-main: rgba(100, 221, 23, 0.55);
+        --glow-water: rgba(0, 229, 204, 0.12);
+        --glow-soft: rgba(100, 221, 23, 0.3);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -102,10 +105,54 @@
 
     .frog-icon {
         font-size: 2.6em;
+        color: var(--neon-green);
         filter: drop-shadow(0 0 12px var(--neon-green));
         animation: gentleBob 2.4s ease-in-out infinite;
+        line-height: 0;
+        flex-shrink: 0;
+    }
+    .frog-icon svg {
+        width: 1em;
+        height: 1em;
+        display: block;
     }
     .frog-icon.flip { transform: scaleX(-1); animation-name: gentleBobFlip; }
+    .frog-icon.menu {
+        font-size: 0.95em;
+        display: inline-block;
+        vertical-align: -0.15em;
+        margin: 0 0.15em;
+        animation: none;
+        filter: drop-shadow(0 0 8px var(--neon-green));
+    }
+
+    /* frog eye idle: subtle wander + natural blink (right frog mirrors via .flip) */
+    .frog-icon .eye {
+        transform-origin: 0px 0px;
+        animation: frogBlink 5.2s ease-in-out infinite;
+    }
+    .frog-icon .eye-right {
+        animation-delay: -0.4s;
+    }
+    .frog-icon .pupil {
+        animation: frogWander 9s ease-in-out infinite;
+    }
+    .frog-icon .eye-right .pupil {
+        animation-delay: -2.6s;
+    }
+
+    @keyframes frogWander {
+        0%, 100% { transform: translate(0, 0); }
+        14%      { transform: translate(1.1px, -0.7px); }
+        30%      { transform: translate(-0.9px, 0.6px); }
+        48%      { transform: translate(0.7px, 0.9px); }
+        65%      { transform: translate(-1.0px, -0.4px); }
+        82%      { transform: translate(0.4px, -0.8px); }
+    }
+    @keyframes frogBlink {
+        0%, 42%, 46%, 100% { transform: scaleY(1); }
+        44%                { transform: scaleY(0.1); }
+    }
 
     @keyframes gentleBob {
         0%, 100% { transform: translateY(0) rotate(-3deg); }
@@ -118,24 +165,10 @@
 
     h1 {
         color: var(--text-bright);
-        text-shadow: 0 0 10px var(--neon-green), 0 0 26px rgba(100, 221, 23, 0.6);
+        text-shadow: 0 0 10px var(--neon-green), 0 0 26px var(--glow-main);
         font-size: 2.2em;
         letter-spacing: 4px;
         margin: 0;
-    }
-
-    .version {
-        position: absolute;
-        top: -12px;
-        right: -16px;
-        font-size: 0.5em;
-        background: rgba(4, 20, 10, 0.9);
-        color: var(--water-teal);
-        padding: 3px 8px;
-        border: 1px solid var(--water-teal);
-        border-radius: 3px;
-        box-shadow: 0 0 10px rgba(0, 229, 204, 0.35);
-        white-space: nowrap;
     }
 
     /* ------- layout ------- */
@@ -147,7 +180,12 @@
         z-index: 2;
     }
 
-    canvas { display: block; }
+    canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        -ms-interpolation-mode: nearest-neighbor;
+    }
 
     .board-wrap { position: relative; }
 
@@ -155,20 +193,10 @@
         border: 6px solid var(--neon-green);
         background: linear-gradient(rgba(6, 26, 12, 0.94), rgba(3, 16, 8, 0.97));
         box-shadow:
-            0 0 34px rgba(100, 221, 23, 0.55),
-            0 0 90px rgba(0, 229, 204, 0.12),
+            0 0 34px var(--glow-main),
+            0 0 90px var(--glow-water),
             inset 0 0 60px rgba(0, 0, 0, 0.75);
         border-radius: 14px;
-    }
-
-    /* subtle CRT scanlines over the board */
-    .crt {
-        position: absolute;
-        inset: 6px;
-        border-radius: 8px;
-        background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.12) 0 1px, transparent 1px 3px);
-        pointer-events: none;
-        mix-blend-mode: multiply;
     }
 
     .sidebar {
@@ -183,7 +211,7 @@
         border: 3px solid var(--neon-green);
         border-radius: 10px;
         padding: 12px 14px;
-        box-shadow: 0 0 16px rgba(100, 221, 23, 0.3), inset 0 0 24px rgba(0,0,0,0.4);
+        box-shadow: 0 0 16px var(--glow-soft), inset 0 0 24px rgba(0,0,0,0.4);
     }
 
     .stats-panel .stat {
@@ -219,10 +247,53 @@
         padding: 4px;
     }
 
-    .mode-panel { text-align: center; }
-    #mode-label { font-size: 0.55em; color: var(--water-teal); letter-spacing: 2px; }
-    #goal-label { font-size: 0.5em; margin-top: 8px; opacity: 0.7; line-height: 1.7; }
-    #combo-label { font-size: 0.55em; margin-top: 9px; color: var(--firefly); min-height: 1em; text-shadow: 0 0 8px rgba(255,255,153,0.5); }
+    .mode-panel {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        padding: 10px 12px;
+    }
+    #mode-label { font-size: 0.5em; color: var(--water-teal); letter-spacing: 1px; line-height: 1.35; margin: 0; }
+    #goal-label { font-size: 0.46em; opacity: 0.7; line-height: 1.55; margin: 0; }
+    #combo-label {
+        font-size: 0.52em;
+        color: var(--firefly);
+        text-shadow: 0 0 8px rgba(255,255,153,0.5);
+        margin: 0;
+        min-height: 0;
+    }
+    #combo-label:empty { display: none; }
+
+    .gear-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.35em;
+        height: 1.35em;
+        margin-left: 0.55em;
+        padding: 0;
+        vertical-align: -0.2em;
+        background: transparent;
+        border: none;
+        color: var(--text-green);
+        cursor: pointer;
+        opacity: 0.55;
+        transition: opacity 0.15s, color 0.15s, transform 0.1s;
+    }
+    .gear-btn:hover {
+        opacity: 1;
+        color: var(--neon-green);
+        transform: rotate(30deg);
+    }
+    .gear-btn:active { transform: rotate(60deg) scale(0.92); }
+    .gear-btn svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+    }
 
     /* ------- overlays ------- */
     #overlay-backdrop {
@@ -268,7 +339,38 @@
     }
     .screen .tag { font-size: 0.5em; color: var(--water-teal); opacity: 0.85; margin: 0 0 22px; letter-spacing: 2px; }
 
-    .mode-buttons { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+    .mode-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 18px;
+        position: relative;
+        padding-top: 42px; /* room for the handwritten note */
+    }
+    .start-note {
+        position: absolute;
+        left: -4px;
+        top: 4px;
+        font-family: 'Caveat', cursive;
+        font-size: 1.35em;
+        font-weight: 700;
+        color: var(--firefly);
+        text-shadow: 0 0 8px rgba(255, 255, 153, 0.45);
+        transform: rotate(-7deg);
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 2;
+        letter-spacing: 0.5px;
+    }
+    .start-note .arrow {
+        display: block;
+        font-size: 1.1em;
+        margin-top: -2px;
+        margin-left: 28px;
+        transform: rotate(12deg);
+        color: var(--water-teal);
+        text-shadow: 0 0 6px rgba(0, 229, 204, 0.4);
+    }
 
     button {
         font-family: 'Press Start 2P', system-ui, monospace;
@@ -317,14 +419,6 @@
     .small-btn.alt { background: #123d18; color: var(--text-green); border: 2px solid var(--neon-dim); box-shadow: 0 3px 0 #081f0c; }
     .small-btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
     .small-btn:active { transform: translateY(2px); box-shadow: none; }
-
-    .bests {
-        font-size: 0.48em;
-        line-height: 2.1;
-        opacity: 0.75;
-        margin-bottom: 18px;
-        color: var(--firefly);
-    }
 
     .settings {
         display: flex;
@@ -427,7 +521,6 @@
         body { padding: 12px 6px 26px; }
         h1 { font-size: 1.25em; letter-spacing: 2px; }
         .frog-icon { font-size: 1.7em; }
-        .version { right: -6px; top: -14px; }
         .game-container { gap: 8px; }
         .sidebar { width: 96px; gap: 10px; }
         .panel { padding: 8px 9px; border-width: 2px; }
@@ -438,6 +531,8 @@
         #hold-canvas { width: 62px; height: 62px; }
         #next-canvas { width: 74px; height: 210px; }
         .screen { padding: 20px 16px; }
+        .mode-buttons { padding-top: 36px; }
+        .start-note { left: 2px; top: 2px; font-size: 1.15em; }
     }
 </style>
 </head>
@@ -446,10 +541,69 @@
 <div class="moon"></div>
 
 <div class="header">
-    <div class="frog-icon">🐸</div>
+    <div class="frog-icon">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+            <!-- body -->
+            <ellipse cx="32" cy="42" rx="22" ry="17" fill="currentColor"/>
+            <!-- head -->
+            <circle cx="32" cy="26" r="18" fill="currentColor"/>
+            <!-- left eye (local origin at center for stable CSS transforms) -->
+            <g transform="translate(23 22)">
+                <g class="eye eye-left">
+                    <circle class="sclera" r="7.5" fill="#fff"/>
+                    <g class="pupil">
+                        <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                    </g>
+                </g>
+            </g>
+            <!-- right eye -->
+            <g transform="translate(41 22)">
+                <g class="eye eye-right">
+                    <circle class="sclera" r="7.5" fill="#fff"/>
+                    <g class="pupil">
+                        <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                    </g>
+                </g>
+            </g>
+            <!-- smile -->
+            <path d="M22 34 Q32 42 42 34" stroke="#0a1a0a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <!-- left foot -->
+            <ellipse cx="18" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+            <!-- right foot -->
+            <ellipse cx="46" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+            <!-- cheek blush -->
+            <circle cx="17" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+            <circle cx="47" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+        </svg>
+    </div>
     <h1>FROG TETRIS</h1>
-    <div class="frog-icon flip">🐸</div>
-    <div class="version">v3.0 MIDNIGHT POND</div>
+    <div class="frog-icon flip">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+            <ellipse cx="32" cy="42" rx="22" ry="17" fill="currentColor"/>
+            <circle cx="32" cy="26" r="18" fill="currentColor"/>
+            <g transform="translate(23 22)">
+                <g class="eye eye-left">
+                    <circle class="sclera" r="7.5" fill="#fff"/>
+                    <g class="pupil">
+                        <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                    </g>
+                </g>
+            </g>
+            <g transform="translate(41 22)">
+                <g class="eye eye-right">
+                    <circle class="sclera" r="7.5" fill="#fff"/>
+                    <g class="pupil">
+                        <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                    </g>
+                </g>
+            </g>
+            <path d="M22 34 Q32 42 42 34" stroke="#0a1a0a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <ellipse cx="18" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+            <ellipse cx="46" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+            <circle cx="17" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+            <circle cx="47" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+        </svg>
+    </div>
 </div>
 
 <div class="game-container">
@@ -474,7 +628,6 @@
 
     <div class="board-wrap">
         <canvas id="game-canvas" width="300" height="600"></canvas>
-        <div class="crt"></div>
     </div>
 
     <div class="sidebar">
@@ -501,30 +654,95 @@
 </div>
 
 <div class="controls-hint">
-    ARROWS move · ↑/X rotate · Z ccw · SPACE hard drop · C hold · P pause · M mute
+    ARROWS move · ↑/X rotate · Z ccw · SPACE hard drop · C hold · P/Esc pause · M mute
+    <button id="btn-gear" class="gear-btn" title="Settings / Pause (Esc)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/>
+        </svg>
+    </button>
 </div>
 
 <div id="overlay-backdrop">
     <div id="menu-screen" class="screen">
-        <h2>🐸 MIDNIGHT POND 🐸</h2>
-        <p class="tag">FROG TETRIS v3.0 · DARK AMBIENT EDITION</p>
+        <h2>
+            <span class="frog-icon menu">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <ellipse cx="32" cy="42" rx="22" ry="17" fill="currentColor"/>
+                    <circle cx="32" cy="26" r="18" fill="currentColor"/>
+                    <g transform="translate(23 22)">
+                        <g class="eye eye-left">
+                            <circle class="sclera" r="7.5" fill="#fff"/>
+                            <g class="pupil">
+                                <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                            </g>
+                        </g>
+                    </g>
+                    <g transform="translate(41 22)">
+                        <g class="eye eye-right">
+                            <circle class="sclera" r="7.5" fill="#fff"/>
+                            <g class="pupil">
+                                <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                            </g>
+                        </g>
+                    </g>
+                    <path d="M22 34 Q32 42 42 34" stroke="#0a1a0a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                    <ellipse cx="18" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+                    <ellipse cx="46" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+                    <circle cx="17" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+                    <circle cx="47" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+                </svg>
+            </span>
+            MIDNIGHT POND
+            <span class="frog-icon menu flip">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <ellipse cx="32" cy="42" rx="22" ry="17" fill="currentColor"/>
+                    <circle cx="32" cy="26" r="18" fill="currentColor"/>
+                    <g transform="translate(23 22)">
+                        <g class="eye eye-left">
+                            <circle class="sclera" r="7.5" fill="#fff"/>
+                            <g class="pupil">
+                                <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                            </g>
+                        </g>
+                    </g>
+                    <g transform="translate(41 22)">
+                        <g class="eye eye-right">
+                            <circle class="sclera" r="7.5" fill="#fff"/>
+                            <g class="pupil">
+                                <circle r="3.6" cx="1.4" cy="0.9" fill="#0a1a0a"/>
+                            </g>
+                        </g>
+                    </g>
+                    <path d="M22 34 Q32 42 42 34" stroke="#0a1a0a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                    <ellipse cx="18" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+                    <ellipse cx="46" cy="56" rx="9" ry="5.5" fill="currentColor"/>
+                    <circle cx="17" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+                    <circle cx="47" cy="30" r="3.2" fill="#ff8fab" opacity="0.45"/>
+                </svg>
+            </span>
+        </h2>
         <div class="mode-buttons">
-            <button class="mode-btn" data-mode="marathon">Marathon<small>endless · gravity rises every 10 lines</small></button>
-            <button class="mode-btn" data-mode="sprint">Sprint 40<small>clear 40 lines as fast as you can</small></button>
-            <button class="mode-btn" data-mode="zen">Zen<small>chill tempo · the pond never overflows</small></button>
+            <div class="start-note">start here<span class="arrow">↘</span></div>
+            <button class="mode-btn" data-mode="marathon">Marathon Mode<small>endless play · gravity rises every 10 lines</small></button>
+            <button class="mode-btn" data-mode="sprint">Sprint Mode<small>clear 40 lines as fast as you can</small></button>
+            <button class="mode-btn" data-mode="zen">Zen Mode<small>relaxed pace · the pond never overflows</small></button>
         </div>
-        <div class="bests" id="bests"></div>
         <div class="settings">
             <label>MUSIC <input type="range" id="set-music" min="0" max="100" value="70"></label>
             <label>SFX <input type="range" id="set-sfx" min="0" max="100" value="80"></label>
             <label>GHOST PIECE <input type="checkbox" id="set-ghost" checked></label>
         </div>
-        <p class="hint">ARROWS move · ↑/X rotate · Z ccw · SPACE hard drop<br>C hold · P pause · M mute · R restart</p>
+        <p class="hint">ARROWS move · ↑/X rotate · Z ccw · SPACE hard drop<br>C hold · P/Esc pause · M mute · R restart</p>
     </div>
 
     <div id="pause-screen" class="screen">
         <h2>PAUSED</h2>
         <p class="tag">the pond waits…</p>
+        <div class="settings" style="border-top: none; padding-top: 4px; margin-bottom: 18px;">
+            <label>MUSIC <input type="range" id="set-music-p" min="0" max="100" value="70"></label>
+            <label>SFX <input type="range" id="set-sfx-p" min="0" max="100" value="80"></label>
+            <label>GHOST PIECE <input type="checkbox" id="set-ghost-p" checked></label>
+        </div>
         <div class="row-buttons">
             <button class="small-btn" id="btn-resume">Resume</button>
             <button class="small-btn alt" id="btn-restart">Restart</button>
@@ -547,9 +765,11 @@
 <script>
 'use strict';
 /**
- * FROG TETRIS v3.0 — MIDNIGHT POND EDITION
+ * FROG TETRIS v4.25 — MIDNIGHT POND REFINED
  * Single-file engine: Canvas 2D · SRS rotation · 7-bag · T-spins · combos · B2B
  * Three modes (Marathon / Sprint 40 / Zen) · generative dark-ambient audio · touch support
+ * Smooth 10-tier complementary colors (1-4 / 5-10 / then 5-lv steps) · crisp native blocks
+ * No CRT · dynamic board glow · hypnotic BGM · handwritten "start here" on menu
  */
 
 // ================= CONFIG =================
@@ -562,16 +782,157 @@ const LOCK_DELAY = 500;
 const MAX_LOCK_RESETS = 15;
 const NEXT_COUNT = 5;
 
-const COLORS = [
-    null,
-    '#00e5cc', // I — river teal
-    '#3f6fd8', // J — deep water blue
-    '#ff8f00', // L — frog-belly orange
-    '#fdd835', // O — firefly yellow
-    '#64dd17', // S — neon frog green
-    '#ab47bc', // T — lily purple
-    '#e04040'  // Z — red-snatcher
+// ================= COLOR TIER SYSTEM (Marathon polish) =================
+// 10 complementary neon schemes with custom level windows (up to 50).
+// 1-4 Verdant · 5-10 Amethyst · 11-15 Blossom · 16-20 Ember · 21-25 Azure
+// 26-30 Indigo · 31-35 Lime · 36-40 Magenta · 41-45 Gold · 46+ Teal
+const SCHEMES = [
+    { // 0 Verdant (1-4)
+        neon: '#64dd17', dim: '#3a7d0e', text: '#a8f5a8', bright: '#d4ffd4',
+        water: '#00e5cc', lily: '#ab47bc', firefly: '#ffff99',
+        deep: '#03130a', deeper: '#010a05',
+        pieces: [null, '#00e5cc', '#3f6fd8', '#ff8f00', '#fdd835', '#64dd17', '#ab47bc', '#e04040']
+    },
+    { // 1 Amethyst (5-10)
+        neon: '#c026ff', dim: '#7e22ce', text: '#e9d5ff', bright: '#f3e8ff',
+        water: '#e879f9', lily: '#a855f7', firefly: '#f0abfc',
+        deep: '#1a0a2e', deeper: '#0f051a',
+        pieces: [null, '#e879f9', '#818cf8', '#f472b6', '#fbbf24', '#c026ff', '#a855f7', '#f43f5e']
+    },
+    { // 2 Blossom (11-15)
+        neon: '#f472b6', dim: '#be185d', text: '#fce7f3', bright: '#fdf2f8',
+        water: '#fb7185', lily: '#ec4899', firefly: '#fda4af',
+        deep: '#2a0a1a', deeper: '#1a0510',
+        pieces: [null, '#fb7185', '#c084fc', '#fb923c', '#fde047', '#f472b6', '#ec4899', '#f43f5e']
+    },
+    { // 3 Ember (16-20)
+        neon: '#fb923c', dim: '#c2410c', text: '#ffedd5', bright: '#fff7ed',
+        water: '#fdba74', lily: '#f97316', firefly: '#fcd34d',
+        deep: '#2a150a', deeper: '#1a0c05',
+        pieces: [null, '#fdba74', '#60a5fa', '#f97316', '#facc15', '#fb923c', '#f97316', '#ef4444']
+    },
+    { // 4 Azure (21-25)
+        neon: '#22d3ee', dim: '#0e7490', text: '#cffafe', bright: '#ecfeff',
+        water: '#67e8f9', lily: '#06b6d4', firefly: '#a5f3fc',
+        deep: '#0a1a2a', deeper: '#050f1a',
+        pieces: [null, '#67e8f9', '#3b82f6', '#f97316', '#facc15', '#22d3ee', '#06b6d4', '#f43f5e']
+    },
+    { // 5 Indigo (26-30)
+        neon: '#818cf8', dim: '#4338ca', text: '#e0e7ff', bright: '#eef2ff',
+        water: '#a5b4fc', lily: '#6366f1', firefly: '#c7d2fe',
+        deep: '#0f0a2a', deeper: '#08051a',
+        pieces: [null, '#a5b4fc', '#6366f1', '#f472b6', '#fbbf24', '#818cf8', '#4f46e5', '#f43f5e']
+    },
+    { // 6 Lime (31-35)
+        neon: '#a3e635', dim: '#4d7c0f', text: '#ecfccb', bright: '#f7fee7',
+        water: '#bef264', lily: '#84cc16', firefly: '#d9f99d',
+        deep: '#0f1a05', deeper: '#081005',
+        pieces: [null, '#bef264', '#4ade80', '#fb923c', '#facc15', '#a3e635', '#65a30d', '#ef4444']
+    },
+    { // 7 Magenta (36-40)
+        neon: '#e879f9', dim: '#a21caf', text: '#fae8ff', bright: '#fdf4ff',
+        water: '#f0abfc', lily: '#d946ef', firefly: '#f5d0fe',
+        deep: '#1f0a2a', deeper: '#12051a',
+        pieces: [null, '#f0abfc', '#c084fc', '#fb7185', '#fde047', '#e879f9', '#c026ff', '#f43f5e']
+    },
+    { // 8 Gold (41-45)
+        neon: '#fbbf24', dim: '#b45309', text: '#fef3c7', bright: '#fffbeb',
+        water: '#fcd34d', lily: '#f59e0b', firefly: '#fde68a',
+        deep: '#1a1205', deeper: '#100a02',
+        pieces: [null, '#fcd34d', '#60a5fa', '#f97316', '#facc15', '#fbbf24', '#d97706', '#ef4444']
+    },
+    { // 9 Teal (46+)
+        neon: '#2dd4bf', dim: '#0f766e', text: '#ccfbf1', bright: '#f0fdfa',
+        water: '#5eead4', lily: '#14b8a6', firefly: '#99f6e4',
+        deep: '#051a18', deeper: '#020f0d',
+        pieces: [null, '#5eead4', '#38bdf8', '#fb923c', '#facc15', '#2dd4bf', '#0d9488', '#f43f5e']
+    }
 ];
+
+let COLORS = SCHEMES[0].pieces.slice(); // live piece colors (mutated during transitions)
+let currentScheme = Object.assign({}, SCHEMES[0]); // live UI / ambience colors
+let colorTier = 0;
+let colorTransition = null; // { from, to, t, duration }
+
+function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+}
+function lerpColor(a, b, t) {
+    const A = hexToRgb(a), B = hexToRgb(b);
+    return rgbToHex(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t);
+}
+function lerpScheme(from, to, t) {
+    const out = {};
+    for (const k of ['neon', 'dim', 'text', 'bright', 'water', 'lily', 'firefly', 'deep', 'deeper']) {
+        out[k] = lerpColor(from[k], to[k], t);
+    }
+    out.pieces = [null];
+    for (let i = 1; i <= 7; i++) out.pieces[i] = lerpColor(from.pieces[i], to.pieces[i], t);
+    return out;
+}
+function applyScheme(scheme) {
+    currentScheme = scheme;
+    COLORS = scheme.pieces.slice();
+    const root = document.documentElement;
+    root.style.setProperty('--neon-green', scheme.neon);
+    root.style.setProperty('--neon-dim', scheme.dim);
+    root.style.setProperty('--text-green', scheme.text);
+    root.style.setProperty('--text-bright', scheme.bright);
+    root.style.setProperty('--water-teal', scheme.water);
+    root.style.setProperty('--lily-purple', scheme.lily);
+    root.style.setProperty('--firefly', scheme.firefly);
+    root.style.setProperty('--bg-deep', scheme.deep);
+    root.style.setProperty('--bg-deeper', scheme.deeper);
+    // dynamic glow so board / panel drop-shadows follow the tier
+    const n = hexToRgb(scheme.neon);
+    const w = hexToRgb(scheme.water);
+    root.style.setProperty('--glow-main', `rgba(${n[0]}, ${n[1]}, ${n[2]}, 0.55)`);
+    root.style.setProperty('--glow-water', `rgba(${w[0]}, ${w[1]}, ${w[2]}, 0.14)`);
+    root.style.setProperty('--glow-soft', `rgba(${n[0]}, ${n[1]}, ${n[2]}, 0.3)`);
+    // soft body background update (keeps radial accents feeling alive)
+    document.body.style.background =
+        `radial-gradient(1200px 700px at 78% -10%, ${scheme.water}12, transparent 60%),
+         radial-gradient(900px 600px at 12% 110%, ${scheme.neon}0f, transparent 60%),
+         linear-gradient(#04180c, ${scheme.deeper})`;
+}
+function getTierForLevel(level) {
+    // custom windows: 1-4 green, 5-10 purple, then ~5-level steps to 50
+    if (level <= 4) return 0;
+    if (level <= 10) return 1;
+    if (level <= 15) return 2;
+    if (level <= 20) return 3;
+    if (level <= 25) return 4;
+    if (level <= 30) return 5;
+    if (level <= 35) return 6;
+    if (level <= 40) return 7;
+    if (level <= 45) return 8;
+    return 9; // 46+
+}
+function startColorTransition(newTier) {
+    if (newTier === colorTier) return;
+    const from = currentScheme;
+    const to = SCHEMES[newTier];
+    colorTransition = { from, to, t: 0, duration: 1.8 }; // slightly snappier for more frequent tiers
+    colorTier = newTier;
+    // celebratory float using the new neon
+    addFloat('TIER ' + (newTier + 1), canvas.width / 2, canvas.height * 0.42, to.neon);
+}
+function updateColorTransition(dt) {
+    if (!colorTransition) return;
+    colorTransition.t += dt / colorTransition.duration;
+    if (colorTransition.t >= 1) {
+        applyScheme(colorTransition.to);
+        colorTransition = null;
+        return;
+    }
+    // smooth ease-out
+    const t = 1 - Math.pow(1 - colorTransition.t, 2.5);
+    applyScheme(lerpScheme(colorTransition.from, colorTransition.to, t));
+}
 
 const TETROMINOES = {
     1: { name: 'I', shapes: [[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]], [[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]], [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]]] },
@@ -599,13 +960,13 @@ const WALL_KICKS = {
 };
 
 const MODE_INFO = {
-    marathon: { label: 'MARATHON', goal: 'level up every 10 lines' },
-    sprint:   { label: 'SPRINT 40', goal: 'clear 40 lines!' },
-    zen:      { label: 'ZEN', goal: 'no overflow · just vibes' }
+    marathon: { label: 'MARATHON MODE', goal: 'endless play · gravity rises every 10 lines' },
+    sprint:   { label: 'SPRINT MODE',   goal: 'clear 40 lines as fast as you can' },
+    zen:      { label: 'ZEN MODE',      goal: 'relaxed pace · the pond never overflows' }
 };
 
 // ================= PERSISTENCE =================
-const SAVE_KEY = 'frogTetrisV3';
+const SAVE_KEY = 'frogTetrisV425';
 let save = { music: 70, sfx: 80, ghost: true, muted: false, bestMarathon: 0, bestZen: 0, bestSprint: 0 };
 try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -647,8 +1008,11 @@ let waterT = 0;             // water ripple animation clock
 // ================= DOM =================
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d', { alpha: false });
+ctx.imageSmoothingEnabled = false;
 const holdCtx = document.getElementById('hold-canvas').getContext('2d');
+holdCtx.imageSmoothingEnabled = false;
 const nextCtx = document.getElementById('next-canvas').getContext('2d');
+nextCtx.imageSmoothingEnabled = false;
 const el = id => document.getElementById(id);
 const ui = {
     score: el('score'), lines: el('lines'), level: el('level'), time: el('time'),
@@ -684,10 +1048,10 @@ const AE = (() => {
                 musicBus = ac.createGain();
                 musicBus.connect(master);
 
-                // echo send for melody plucks
-                delayNode = ac.createDelay(1.0); delayNode.delayTime.value = 0.38;
-                const fb = ac.createGain(); fb.gain.value = 0.38;
-                delayGain = ac.createGain(); delayGain.gain.value = 0.32;
+                // longer, wetter echo for hypnotic / moody wash
+                delayNode = ac.createDelay(1.5); delayNode.delayTime.value = 0.55;
+                const fb = ac.createGain(); fb.gain.value = 0.48;
+                delayGain = ac.createGain(); delayGain.gain.value = 0.42;
                 delayNode.connect(fb); fb.connect(delayNode);
                 delayNode.connect(delayGain); delayGain.connect(musicBus);
 
@@ -704,7 +1068,7 @@ const AE = (() => {
         if (!ac) return;
         const m = save.muted ? 0 : 1;
         sfxBus.gain.value = (save.sfx / 100) * 0.9 * m;
-        musicBus.gain.value = (save.music / 100) * 0.55 * m;
+        musicBus.gain.value = (save.music / 100) * 0.1375 * m; // another 50% quieter
     }
 
     function makeNoise() {
@@ -720,11 +1084,11 @@ const AE = (() => {
         const src = ac.createBufferSource();
         src.buffer = makeNoise(); src.loop = true;
         const bp = ac.createBiquadFilter();
-        bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 0.4;
-        const g = ac.createGain(); g.gain.value = 0.018;
-        // slow shimmer on the rain
-        const lfo = ac.createOscillator(); lfo.frequency.value = 0.07;
-        const lg = ac.createGain(); lg.gain.value = 0.008;
+        bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.3;
+        const g = ac.createGain(); g.gain.value = 0.012;
+        // very slow shimmer – more atmospheric
+        const lfo = ac.createOscillator(); lfo.frequency.value = 0.04;
+        const lg = ac.createGain(); lg.gain.value = 0.006;
         lfo.connect(lg); lg.connect(g.gain);
         src.connect(bp); bp.connect(g); g.connect(musicBus);
         src.start(); lfo.start();
@@ -735,22 +1099,26 @@ const AE = (() => {
         droneOn = true;
         droneGain = ac.createGain(); droneGain.gain.value = 0;
         const filt = ac.createBiquadFilter();
-        filt.type = 'lowpass'; filt.frequency.value = 170;
+        filt.type = 'lowpass'; filt.frequency.value = 110; // darker, moodier
         droneGain.connect(filt); filt.connect(musicBus);
 
         const o1 = ac.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 43.65; // F1
-        const o2 = ac.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 43.65 * 1.007; // detuned
+        const o2 = ac.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 43.65 * 1.012; // wider detune
         const o3 = ac.createOscillator(); o3.type = 'sine'; o3.frequency.value = 65.41; // C2 fifth
+        const o4 = ac.createOscillator(); o4.type = 'sine'; o4.frequency.value = 87.31 * 0.5; // soft F
+        const o4g = ac.createGain(); o4g.gain.value = 0.35;
         const sub = ac.createOscillator(); sub.type = 'sine'; sub.frequency.value = 21.83; // F0 sub
-        const subG = ac.createGain(); subG.gain.value = 0.5;
+        const subG = ac.createGain(); subG.gain.value = 0.6;
 
-        const lfo = ac.createOscillator(); lfo.frequency.value = 0.045;
-        const lg = ac.createGain(); lg.gain.value = 90;
+        // very slow filter sweep for hypnotic breathing
+        const lfo = ac.createOscillator(); lfo.frequency.value = 0.022;
+        const lg = ac.createGain(); lg.gain.value = 55;
         lfo.connect(lg); lg.connect(filt.frequency);
 
         o1.connect(droneGain); o2.connect(droneGain); o3.connect(droneGain);
+        o4.connect(o4g); o4g.connect(droneGain);
         sub.connect(subG); subG.connect(droneGain);
-        o1.start(); o2.start(); o3.start(); sub.start(); lfo.start();
+        o1.start(); o2.start(); o3.start(); o4.start(); sub.start(); lfo.start();
     }
 
     function droneLevel(target, secs) {
@@ -761,38 +1129,39 @@ const AE = (() => {
     }
 
     function pluck(freq, t, vol, dur) {
-        const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
-        const o2 = ac.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2;
+        const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = freq; // softer, less bright
+        const o2 = ac.createOscillator(); o2.type = 'triangle'; o2.frequency.value = freq * 1.5;
         const g = ac.createGain();
-        const g2 = ac.createGain(); g2.gain.value = 0.25;
+        const g2 = ac.createGain(); g2.gain.value = 0.18;
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(vol, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+        g.gain.linearRampToValueAtTime(vol, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
         o.connect(g); o2.connect(g2); g2.connect(g);
         g.connect(musicBus); g.connect(delayNode);
-        o.start(t); o2.start(t); o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
+        o.start(t); o2.start(t); o.stop(t + dur + 0.15); o2.stop(t + dur + 0.15);
     }
 
     function startMelody() {
-        nextNoteTime = ac.currentTime + 1;
+        nextNoteTime = ac.currentTime + 1.5;
         melodyTimer = setInterval(() => {
-            if (!ac || state !== 'PLAYING') { nextNoteTime = Math.max(nextNoteTime, ac ? ac.currentTime + 0.5 : 0); return; }
-            const tempo = Math.min(1.6, 1 + (stats.level - 1) * 0.06);
-            const stepDur = 0.46 / tempo;
-            while (nextNoteTime < ac.currentTime + 0.35) {
-                // random walk over the scale
-                if (Math.random() < 0.82) {
-                    noteIdx += [(-2), -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)];
+            if (!ac || state !== 'PLAYING') { nextNoteTime = Math.max(nextNoteTime, ac ? ac.currentTime + 0.8 : 0); return; }
+            // slower, more hypnotic base tempo; still gently rises with level
+            const tempo = Math.min(1.25, 0.85 + (stats.level - 1) * 0.04);
+            const stepDur = 0.62 / tempo;
+            while (nextNoteTime < ac.currentTime + 0.4) {
+                // sparse random walk – fewer notes, longer space
+                if (Math.random() < 0.62) {
+                    noteIdx += [(-2), -1, -1, 0, 0, 1, 1, 2][Math.floor(Math.random() * 8)];
                     noteIdx = Math.max(0, Math.min(SCALE.length - 1, noteIdx));
-                    pluck(SCALE[noteIdx], nextNoteTime, 0.11 + Math.random() * 0.05, 1.5);
+                    pluck(SCALE[noteIdx], nextNoteTime, 0.07 + Math.random() * 0.04, 2.2);
                 }
-                if (step % 8 === 0) { // low root pulse
-                    pluck(SCALE[0] / 2, nextNoteTime, 0.14, 2.4);
+                if (step % 12 === 0) { // deep root pulse, rarer
+                    pluck(SCALE[0] / 2, nextNoteTime, 0.1, 3.2);
                 }
                 nextNoteTime += stepDur;
                 step++;
             }
-        }, 110);
+        }, 140);
     }
 
     // ---- SFX primitives ----
@@ -1021,7 +1390,7 @@ function resolveClear(rows, tspin) {
         label = ['T-SPIN', 'T-SPIN SINGLE', 'T-SPIN DOUBLE', 'T-SPIN TRIPLE'][n];
         difficult = n > 0;
         AE.sfx.tspin();
-        if (n === 0) addFloat('T-SPIN', canvas.width / 2, canvas.height * 0.35, '#ab47bc');
+        if (n === 0) addFloat('T-SPIN', canvas.width / 2, canvas.height * 0.35, currentScheme.lily);
     } else {
         base = [0, 100, 300, 500, 800][n];
         difficult = n === 4;
@@ -1060,18 +1429,20 @@ function resolveClear(rows, tspin) {
             shake = 12;
         }
 
-        if (label) addFloat(label, canvas.width / 2, canvas.height * 0.3, n === 4 ? '#00e5cc' : (tspin ? '#ab47bc' : '#d4ffd4'));
-        if (stats.combo >= 1) addFloat('COMBO x' + (stats.combo + 1), canvas.width / 2, canvas.height * 0.3 + 34, '#ffff99');
+        if (label) addFloat(label, canvas.width / 2, canvas.height * 0.3, n === 4 ? currentScheme.water : (tspin ? currentScheme.lily : currentScheme.bright));
+        if (stats.combo >= 1) addFloat('COMBO x' + (stats.combo + 1), canvas.width / 2, canvas.height * 0.3 + 34, currentScheme.firefly);
     }
 
     stats.score += pts;
 
-    // level progression (marathon)
+    // level progression (marathon) + smooth tier color rotation every 10 levels
     if (mode === 'marathon' && stats.lines >= stats.level * 10) {
         stats.level++;
         dropSpeed = gravityFor(stats.level);
         AE.sfx.levelup();
-        addFloat('LEVEL ' + stats.level, canvas.width / 2, canvas.height * 0.45, '#64dd17');
+        addFloat('LEVEL ' + stats.level, canvas.width / 2, canvas.height * 0.45, currentScheme.neon);
+        const newTier = getTierForLevel(stats.level);
+        if (newTier !== colorTier) startColorTransition(newTier);
     }
 
     // sprint win check
@@ -1088,7 +1459,7 @@ function topOut() {
         board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
         shake = 10;
         AE.croak(0.3, 50);
-        addFloat('THE POND REFRESHES', canvas.width / 2, canvas.height / 2, '#00e5cc');
+        addFloat('THE POND REFRESHES', canvas.width / 2, canvas.height / 2, currentScheme.water);
         piece = null;
         spawnPiece();
         return;
@@ -1124,7 +1495,7 @@ function lighten(hex, amt) {
     return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
-function drawFrogBlock(c, x, y, size, id, alpha = 1, ghost = false) {
+function drawFrogBlock(c, x, y, size, id, alpha = 1, ghost = false, noFace = false) {
     if (!id) return;
     const col = COLORS[id];
     c.save();
@@ -1139,7 +1510,7 @@ function drawFrogBlock(c, x, y, size, id, alpha = 1, ghost = false) {
         return;
     }
 
-    // body with vertical sheen
+    // body with soft vertical sheen (rounded aesthetics)
     const g = c.createLinearGradient(x, y, x, y + size);
     g.addColorStop(0, lighten(col, 38));
     g.addColorStop(0.35, col);
@@ -1159,25 +1530,27 @@ function drawFrogBlock(c, x, y, size, id, alpha = 1, ghost = false) {
     roundRect(c, x + 1, y + 1, size - 2, size - 2, 5);
     c.stroke();
 
-    // frog face
-    const s = size / 30;
-    c.fillStyle = '#fff';
-    c.beginPath(); c.arc(x + 9 * s, y + 10 * s, 3.6 * s, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(x + 21 * s, y + 10 * s, 3.6 * s, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#0a1a0a';
-    c.beginPath(); c.arc(x + 9.5 * s, y + 10.5 * s, 1.7 * s, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(x + 21.5 * s, y + 10.5 * s, 1.7 * s, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = 'rgba(6,26,10,0.85)';
-    c.lineWidth = 1.6 * s;
-    c.beginPath();
-    c.moveTo(x + 7 * s, y + 18.5 * s);
-    c.quadraticCurveTo(x + 15 * s, y + 23.5 * s, x + 23 * s, y + 18.5 * s);
-    c.stroke();
+    // frog face (skipped for next-queue previews)
+    if (!noFace) {
+        const s = size / 30;
+        c.fillStyle = '#fff';
+        c.beginPath(); c.arc(x + 9 * s, y + 10 * s, 3.6 * s, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.arc(x + 21 * s, y + 10 * s, 3.6 * s, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#0a1a0a';
+        c.beginPath(); c.arc(x + 9.5 * s, y + 10.5 * s, 1.7 * s, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.arc(x + 21.5 * s, y + 10.5 * s, 1.7 * s, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = 'rgba(6,26,10,0.85)';
+        c.lineWidth = 1.6 * s;
+        c.beginPath();
+        c.moveTo(x + 7 * s, y + 18.5 * s);
+        c.quadraticCurveTo(x + 15 * s, y + 23.5 * s, x + 23 * s, y + 18.5 * s);
+        c.stroke();
+    }
 
     c.restore();
 }
 
-function drawMini(c, id, cx, cy, blockSize) {
+function drawMini(c, id, cx, cy, blockSize, noFace = false) {
     if (!id) return;
     const shape = TETROMINOES[id].shapes[0];
     let minR = 9, maxR = -1, minC = 9, maxC = -1;
@@ -1185,15 +1558,15 @@ function drawMini(c, id, cx, cy, blockSize) {
         if (shape[r][cc]) { minR = Math.min(minR, r); maxR = Math.max(maxR, r); minC = Math.min(minC, cc); maxC = Math.max(maxC, cc); }
     }
     const w = (maxC - minC + 1) * blockSize, h = (maxR - minR + 1) * blockSize;
-    const ox = cx - w / 2, oy = cy - h / 2;
+    const ox = Math.round(cx - w / 2), oy = Math.round(cy - h / 2);
     for (let r = minR; r <= maxR; r++) for (let cc = minC; cc <= maxC; cc++) {
-        if (shape[r][cc]) drawFrogBlock(c, ox + (cc - minC) * blockSize, oy + (r - minR) * blockSize, blockSize, id, 1);
+        if (shape[r][cc]) drawFrogBlock(c, ox + (cc - minC) * blockSize, oy + (r - minR) * blockSize, blockSize, id, 1, false, noFace);
     }
 }
 
 function drawHold() {
     holdCtx.clearRect(0, 0, 100, 100);
-    if (holdId) drawMini(holdCtx, holdId, 50, 50, 20);
+    if (holdId) drawMini(holdCtx, holdId, 50, 50, 22, false);
     if (!canHold && holdId) { holdCtx.fillStyle = 'rgba(0,0,0,0.45)'; holdCtx.fillRect(0, 0, 100, 100); }
 }
 
@@ -1202,8 +1575,10 @@ function drawNext() {
     for (let i = 0; i < NEXT_COUNT; i++) {
         const id = queue[i];
         if (!id) continue;
-        drawMini(nextCtx, id, 60, 34 + i * 68, i === 0 ? 17 : 14);
-        if (i > 0) { nextCtx.globalAlpha = 1; }
+        // larger sizes; faces omitted so previews stay clean
+        const bs = i === 0 ? 22 : 16;
+        const cy = 28 + i * 66 + (i === 0 ? 4 : 0);
+        drawMini(nextCtx, id, 60, cy, bs, true);
     }
 }
 
@@ -1215,10 +1590,10 @@ function spawnSplash(row) {
             x: Math.random() * canvas.width, y: y + (Math.random() * 12 - 6),
             vx: (Math.random() - 0.5) * 170, vy: (Math.random() * -180) - 40,
             size: Math.random() * 3 + 1, life: 0.9, maxLife: 0.9,
-            color: Math.random() > 0.45 ? '#00e5cc' : '#eaffea'
+            color: Math.random() > 0.45 ? currentScheme.water : currentScheme.bright
         });
     }
-    particles.push({ ring: true, x: canvas.width / 2, y, r: 10, vr: 420, life: 0.5, maxLife: 0.5, color: '#00e5cc' });
+    particles.push({ ring: true, x: canvas.width / 2, y, r: 10, vr: 420, life: 0.5, maxLife: 0.5, color: currentScheme.water });
 }
 
 function spawnDust() {
@@ -1230,7 +1605,7 @@ function spawnDust() {
             for (let i = 0; i < 3; i++) {
                 particles.push({
                     x, y, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 90,
-                    size: Math.random() * 2.5 + 1, life: 0.5, maxLife: 0.5, color: '#a8f5a8'
+                    size: Math.random() * 2.5 + 1, life: 0.5, maxLife: 0.5, color: currentScheme.text
                 });
             }
         }
@@ -1265,23 +1640,25 @@ function render() {
     ctx.save();
     if (shake > 0.2) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
 
-    // backdrop
+    // backdrop (tinted by current tier)
     const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, '#07200f');
-    bg.addColorStop(1, '#03130a');
+    bg.addColorStop(0, currentScheme.deep);
+    bg.addColorStop(1, currentScheme.deeper);
     ctx.fillStyle = bg;
     ctx.fillRect(-12, -12, canvas.width + 24, canvas.height + 24);
 
     // grid
-    ctx.strokeStyle = 'rgba(100, 221, 23, 0.055)';
+    const neonRgb = hexToRgb(currentScheme.neon);
+    ctx.strokeStyle = `rgba(${neonRgb[0]}, ${neonRgb[1]}, ${neonRgb[2]}, 0.055)`;
     ctx.lineWidth = 1;
     for (let i = 1; i < COLS; i++) { ctx.beginPath(); ctx.moveTo(i * BLOCK, 0); ctx.lineTo(i * BLOCK, canvas.height); ctx.stroke(); }
     for (let i = 1; i < ROWS; i++) { ctx.beginPath(); ctx.moveTo(0, i * BLOCK); ctx.lineTo(canvas.width, i * BLOCK); ctx.stroke(); }
 
     // pond water at the bottom
-    ctx.fillStyle = 'rgba(0, 229, 204, 0.07)';
+    const waterRgb = hexToRgb(currentScheme.water);
+    ctx.fillStyle = `rgba(${waterRgb[0]}, ${waterRgb[1]}, ${waterRgb[2]}, 0.07)`;
     ctx.fillRect(0, canvas.height - 26, canvas.width, 26);
-    ctx.strokeStyle = 'rgba(0, 229, 204, 0.35)';
+    ctx.strokeStyle = `rgba(${waterRgb[0]}, ${waterRgb[1]}, ${waterRgb[2]}, 0.35)`;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let x = 0; x <= canvas.width; x += 6) {
@@ -1357,6 +1734,9 @@ function fmtTimePrecise(t) {
 }
 
 function update(dt) {
+    // color transitions keep running even when paused so the pond can finish shifting
+    updateColorTransition(dt);
+
     if (state !== 'PLAYING') { updateFx(dt); return; }
     stats.time += dt;
 
@@ -1414,19 +1794,14 @@ function hideScreens() {
     for (const k in ui.screens) ui.screens[k].classList.remove('show');
 }
 
-function renderBests() {
-    const bs = save.bestSprint ? fmtTimePrecise(save.bestSprint) : '—';
-    el('bests').innerHTML =
-        'BEST MARATHON&nbsp;&nbsp;' + save.bestMarathon + '<br>' +
-        'BEST SPRINT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + bs + '<br>' +
-        'BEST ZEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + save.bestZen;
-}
-
 function showMenu() {
     state = 'MENU';
     ui.modeLabel.textContent = 'MENU';
     ui.goalLabel.textContent = '';
-    renderBests();
+    // gently return to verdant when leaving a run
+    colorTier = 0;
+    colorTransition = null;
+    applyScheme(SCHEMES[0]);
     showScreen('menu');
     if (AE.running) AE.droneLevel(0.02, 2);
 }
@@ -1439,6 +1814,10 @@ function startGame(m) {
     bag = []; queue = []; holdId = null; particles = []; floats = []; flashes = []; shake = 0;
     dropSpeed = gravityFor(1);
     dropAccumulator = 0; lockTimer = 0; lockResets = 0;
+    // always begin in verdant tier
+    colorTier = 0;
+    colorTransition = null;
+    applyScheme(SCHEMES[0]);
     ui.modeLabel.textContent = MODE_INFO[m].label;
     ui.goalLabel.textContent = MODE_INFO[m].goal;
     updateUI();
@@ -1446,7 +1825,7 @@ function startGame(m) {
     hideScreens();
     spawnPiece();
     state = 'PLAYING';
-    AE.droneLevel(0.13, 2.5);
+    AE.droneLevel(0.09, 2.5);
     if (!reqId) reqId = requestAnimationFrame(loop);
 }
 
@@ -1455,11 +1834,12 @@ function togglePause() {
         state = 'PAUSED';
         AE.sfx.pause();
         AE.droneLevel(0.02, 1.5);
+        syncSettingsUI();
         showScreen('pause');
     } else if (state === 'PAUSED') {
         state = 'PLAYING';
         AE.sfx.pause();
-        AE.droneLevel(0.13, 1.5);
+        AE.droneLevel(0.09, 1.5);
         hideScreens();
     }
 }
@@ -1490,16 +1870,16 @@ function endGame(won) {
 }
 
 // ================= INPUT =================
-const GAME_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Space', 'KeyX', 'KeyZ', 'KeyC', 'KeyP', 'KeyM', 'KeyR'];
+const GAME_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Space', 'KeyX', 'KeyZ', 'KeyC', 'KeyP', 'KeyM', 'KeyR', 'Escape'];
 document.addEventListener('keydown', e => {
     if (GAME_KEYS.includes(e.code)) e.preventDefault();
 
     if (e.code === 'KeyM' && !e.repeat) {
         save.muted = !save.muted; persist(); AE.applyVolumes();
-        addFloat(save.muted ? 'MUTED' : 'SOUND ON', canvas.width / 2, 60, '#a8f5a8');
+        addFloat(save.muted ? 'MUTED' : 'SOUND ON', canvas.width / 2, 60, currentScheme.text);
         return;
     }
-    if (e.code === 'KeyP' && !e.repeat) { togglePause(); return; }
+    if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) { togglePause(); return; }
     if (e.code === 'KeyR' && !e.repeat && (state === 'PLAYING' || state === 'PAUSED' || state === 'GAMEOVER' || state === 'WIN')) { startGame(mode); return; }
     if (state !== 'PLAYING') return;
 
@@ -1560,12 +1940,29 @@ el('btn-quit').addEventListener('click', showMenu);
 el('btn-again').addEventListener('click', () => startGame(mode));
 el('btn-menu').addEventListener('click', showMenu);
 
-// settings
+// settings (menu + pause share the same save values)
 const setMusic = el('set-music'), setSfx = el('set-sfx'), setGhost = el('set-ghost');
-setMusic.value = save.music; setSfx.value = save.sfx; setGhost.checked = save.ghost;
-setMusic.addEventListener('input', () => { save.music = +setMusic.value; persist(); AE.applyVolumes(); });
-setSfx.addEventListener('input', () => { save.sfx = +setSfx.value; persist(); AE.applyVolumes(); });
-setGhost.addEventListener('change', () => { save.ghost = setGhost.checked; persist(); });
+const setMusicP = el('set-music-p'), setSfxP = el('set-sfx-p'), setGhostP = el('set-ghost-p');
+function syncSettingsUI() {
+    setMusic.value = setMusicP.value = save.music;
+    setSfx.value = setSfxP.value = save.sfx;
+    setGhost.checked = setGhostP.checked = save.ghost;
+}
+syncSettingsUI();
+function onMusic(v) { save.music = +v; persist(); AE.applyVolumes(); syncSettingsUI(); }
+function onSfx(v) { save.sfx = +v; persist(); AE.applyVolumes(); syncSettingsUI(); }
+function onGhost(v) { save.ghost = !!v; persist(); syncSettingsUI(); }
+setMusic.addEventListener('input', () => onMusic(setMusic.value));
+setSfx.addEventListener('input', () => onSfx(setSfx.value));
+setGhost.addEventListener('change', () => onGhost(setGhost.checked));
+setMusicP.addEventListener('input', () => onMusic(setMusicP.value));
+setSfxP.addEventListener('input', () => onSfx(setSfxP.value));
+setGhostP.addEventListener('change', () => onGhost(setGhostP.checked));
+
+// gear button → pause / settings
+el('btn-gear').addEventListener('click', () => {
+    if (state === 'PLAYING' || state === 'PAUSED') togglePause();
+});
 
 // unlock audio on first interaction
 ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (state !== 'MENU') return; }, { once: true }));
